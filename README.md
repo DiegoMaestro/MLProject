@@ -5,7 +5,7 @@ Run the script [evolutionStrategyProgram.py](#evolutionStrategyProgram) as follo
 
 The [constants.py](#constants) file contains all the tunable parameters.
 
-### <a name="evolutionStrategyProgram" href="#evolutionStrategyProgram">#</a> evolutionStrategyProgram.py - [source](https://github.com/DiegoMaestro/MLProject/evolutionStrategyProgram.py)
+### <a name="evolutionStrategyProgram" href="#evolutionStrategyProgram">#</a> evolutionStrategyProgram.py - [source](evolutionStrategyProgram.py)
 Main python module. Checks if the program was executed with the right parameters (if any),creates the EvolutionstrategyProgram class, and then starts the training.
 
 
