@@ -88,7 +88,7 @@ class User(object):
             if (len(allCaptures) == 0):
                 return ()
             while True:
-                choice = input("Insert move (from to) between {} (captures)".format((allCaptures if capturing is None else [capture for capture in allCaptures if (capture[0] == capturing)])))
+                choice = input("Insert move between the (from, to) pairs:\n{} (captures)".format((allCaptures if capturing is None else [capture for capture in allCaptures if (capture[0] == capturing)])))
                 choice = choice.strip()
 
                 if (re.compile('[0-9]{1,2} [0-9]{1,2}').match(choice) is not None):
@@ -100,7 +100,7 @@ class User(object):
                 print("Mossa {} non valida".format(move))
         else:
             while True:
-                choice = input("Insert move (from to) between {} (moves)".format(allMoves))
+                choice = input("Insert move between the (from, to) pairs:\n{} (moves)".format(allMoves))
                 choice = choice.strip()
 
                 if (re.compile('[0-9]{1,2} [0-9]{1,2}').match(choice) is not None):

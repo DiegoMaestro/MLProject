@@ -4,7 +4,7 @@ from game import Game
 
 def main():
     if (len(sys.argv) != 2):
-        print(f"Usage: {sys.argv[0]} [-l <load path>]")
+        print(f"Usage: {sys.argv[0]} <load path>")
         sys.exit()
 
     p = EvolutionStrategyProgram(sys.argv[0])
