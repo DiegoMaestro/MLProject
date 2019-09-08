@@ -8,7 +8,7 @@ In every save paths the program will, for every generation, create a directory c
 
 Run the script [play.py](#play) as follows to play against a network (from terminal, no interface):
 
-    python play.py [-l <load path>]
+    python play.py <load path>
     
 The load path needs to be of one of the networks previously generated and saved.
 
