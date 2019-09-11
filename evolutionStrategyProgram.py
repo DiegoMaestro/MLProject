@@ -193,12 +193,13 @@ def isPathAvailable(path):
 
 # Gets the paths for loading and/or saving and executes the main program
 def main():
+    loadPath = None
+    
     if (len(sys.argv) == 1):
         if (input("If you don't specify a path, no progress will be saved. Do you want to continue? (y\\n)\n") == 'n'):
             print(f"Usage: {sys.argv[0]} [-l <load path>] [ -s <save path 1> ... <save path N>]")
             sys.exit()
     else:
-        loadPath = None
         try:
             options, args = getopt.getopt(sys.argv[1:], 'l:s', ['load','save'])
             for opt, value in options:
