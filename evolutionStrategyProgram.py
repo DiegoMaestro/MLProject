@@ -11,7 +11,7 @@ import sys
 import time
 
 from constants import ALPHA_BETA_DEPTH, NETWORKS_NUMBER, INPUT_LAYER_LENGTH,\
-    FIRST_LAYER_LENGTH, SECOND_LAYER_LENGTH, OUTPUT_LAYER_LENGTH, TAU,\
+    FIRST_LAYER_LENGTH, SECOND_LAYER_LENGTH, OUTPUT_LAYER_LENGTH,\
     GAMES_PER_NETWORK, GENERATIONS_PER_RUN
 from game import Game
 from neuralNetwork import NeuralNetwork
@@ -23,18 +23,15 @@ class EvolutionStrategyProgram(object):
         # If no data is loaded, initializes the data from generation 0.
         if path is None or not os.path.isdir(path):
             self.generation = 0
-            # The sigmas for every network are all initialized to 0.05.
-            self.sigmas = np.array([[
-                    np.full((FIRST_LAYER_LENGTH, INPUT_LAYER_LENGTH + 1), 0.05),
-                    np.full((SECOND_LAYER_LENGTH, FIRST_LAYER_LENGTH + 1), 0.05),
-                    np.full((OUTPUT_LAYER_LENGTH, SECOND_LAYER_LENGTH + 1), 0.05)
-                ]
-                for n in range(NETWORKS_NUMBER//2)])
 
-            # Half of the networks are initialized with tanh acivation function
-            # and half with lReLU. Space is also being allocated for the offsprings.
+            # The networks are initialized with tanh acivation function.
+            # Space is also being allocated for the offsprings.
             self.neuralNetworks = [
-                NeuralNetwork(number=number + 1)
+                NeuralNetwork(number=number + 1, sigmas=np.array([
+                        np.full((FIRST_LAYER_LENGTH, INPUT_LAYER_LENGTH + 1), 0.05),
+                        np.full((SECOND_LAYER_LENGTH, FIRST_LAYER_LENGTH + 1), 0.05),
+                        np.full((OUTPUT_LAYER_LENGTH, SECOND_LAYER_LENGTH + 1), 0.05)
+                    ]))
                 for number
                 in range(NETWORKS_NUMBER//2*self.generation, NETWORKS_NUMBER//2*(self.generation + 1))
             ] + [None] * (NETWORKS_NUMBER//2)
@@ -50,13 +47,8 @@ class EvolutionStrategyProgram(object):
             print(f"Saving progress in directory {path}")
             os.makedirs(path)
 
-            sigmas = []
-            for network in self.sigmas:
-                sigmas.append([[sigma.tolist() for sigma in layer] for layer in network])
-
             data = {
                     "generation": self.generation,
-                    "sigmas": sigmas,
                     "networks": [network.number for network in self.neuralNetworks]
                     }
 
@@ -75,23 +67,12 @@ class EvolutionStrategyProgram(object):
             data = json.load(json_file)
 
             self.generation = data["generation"]
-            self.sigmas = np.array([[np.array(sigma) for sigma in layer] for layer in data["sigmas"]])
             self.neuralNetworks = [NeuralNetwork(path= path / f"NeuralNetwork{number}.txt") for number in data["networks"]]
-
-    def mutateSigmas(self):
-        # sigma' = sigma * e^( tau * N(0,1) )
-        self.sigmas *= [[np.exp(TAU * np.random.randn(FIRST_LAYER_LENGTH, INPUT_LAYER_LENGTH + 1)),
-                        np.exp(TAU * np.random.randn(SECOND_LAYER_LENGTH, FIRST_LAYER_LENGTH + 1)),
-                        np.exp(TAU * np.random.randn(OUTPUT_LAYER_LENGTH, SECOND_LAYER_LENGTH + 1))]
-                        for n in range(NETWORKS_NUMBER//2)]
 
     def sortNetworks(self):
         # Orders the networks based on their fitness and keeps the half better ones.
         # In case of two networks with the same fitness, the younger has priority.
         self.neuralNetworks.sort(key=lambda network: (network.getFitness(), network.getNumber()) if network is not None else (0, 0), reverse=True)
-        # todo: remove
-        for network in self.neuralNetworks:
-            print(f"Number: {network.number}, fitness: {network.fitness}")
 
     def deleteWorstNetworks(self):
         self.neuralNetworks[NETWORKS_NUMBER//2:] = [None]*(NETWORKS_NUMBER//2)
@@ -100,21 +81,21 @@ class EvolutionStrategyProgram(object):
     def generateOffsprings(self):
         # The sigma (and the variation) array contains, for each network, the self-adaptive parameters for both weights and biases.
         # with the latter being the last column of the matrix.
-        for network, variation, index in zip(self.neuralNetworks[:NETWORKS_NUMBER//2],
-                                             self.sigmas * [[np.random.randn(FIRST_LAYER_LENGTH, INPUT_LAYER_LENGTH + 1),
-                                                             np.random.randn(SECOND_LAYER_LENGTH, FIRST_LAYER_LENGTH + 1),
-                                                             np.random.randn(OUTPUT_LAYER_LENGTH, SECOND_LAYER_LENGTH + 1)]
-                                                             for n in range(NETWORKS_NUMBER//2)],
+        for network, index in zip(self.neuralNetworks[:NETWORKS_NUMBER//2],
                                              range(NETWORKS_NUMBER//2, NETWORKS_NUMBER)):
-            variatedWeights = variation[0][:,:-1], variation[1][:,:-1], variation[2][:,:-1]
-            variatedBiases = np.array(variation[0][:,-1])[:,np.newaxis],\
-                np.array(variation[1][:,-1])[:,np.newaxis],\
-                np.array(variation[2][:,-1])[:,np.newaxis]
+            variatedSigmas = network.mutateSigmas() * [np.random.randn(FIRST_LAYER_LENGTH, INPUT_LAYER_LENGTH + 1),
+                                                         np.random.randn(SECOND_LAYER_LENGTH, FIRST_LAYER_LENGTH + 1),
+                                                         np.random.randn(OUTPUT_LAYER_LENGTH, SECOND_LAYER_LENGTH + 1)]
+            variatedWeights = variatedSigmas[0][:,:-1], variatedSigmas[1][:,:-1], variatedSigmas[2][:,:-1]
+            variatedBiases = np.array(variatedSigmas[0][:,-1])[:,np.newaxis],\
+                np.array(variatedSigmas[1][:,-1])[:,np.newaxis],\
+                np.array(variatedSigmas[2][:,-1])[:,np.newaxis]
 
             self.neuralNetworks[index] = NeuralNetwork(weights=network.weights + variatedWeights,
                                                        biases=network.biases + variatedBiases,
                                                        number=self.generation*(NETWORKS_NUMBER//2) + index + 1,
-                                                       parent=network.number)
+                                                       parent=network.number,
+                                                       sigmas=variatedSigmas)
         self.generation += 1
 
     # Creates a list of opposing teams for the tournament (round-robin)
@@ -148,7 +129,6 @@ class EvolutionStrategyProgram(object):
         for generation in range(GENERATIONS_PER_RUN):
             start = time.time()
             print(f"Generating generation {self.generation} offsprings")
-            self.mutateSigmas()
             self.deleteWorstNetworks()
             self.generateOffsprings()
             print(f"Generation {self.generation} is now playing")
@@ -176,13 +156,14 @@ class EvolutionStrategyProgram(object):
         for path in SAVE_PATHS: print(path)
 
 # Checks if the save path given is usable
-def isPathAvailable(path):
+def isPathAvailable(path, gen):
     if not isinstance(path, Path):
         path = Path(path)
 
     if (os.access(path, os.W_OK)):
         for element in os.listdir(path):
-            if re.search('Generation[0-9]+', element) and os.path.isdir(path / element):
+            if re.search('Generation[0-9]+', element) and os.path.isdir(path / element)\
+                and int(element.replace("Generation","")) > gen:
                 print(f"Directory {element} in path {path} already exists. The program needs to be able to create directories " \
                       "with name \"Generation#\", where # is a positive integer")
                 return False
@@ -194,7 +175,7 @@ def isPathAvailable(path):
 # Gets the paths for loading and/or saving and executes the main program
 def main():
     loadPath = None
-    
+
     if (len(sys.argv) == 1):
         if (input("If you don't specify a path, no progress will be saved. Do you want to continue? (y\\n)\n") == 'n'):
             print(f"Usage: {sys.argv[0]} [-l <load path>] [ -s <save path 1> ... <save path N>]")
@@ -205,12 +186,21 @@ def main():
             for opt, value in options:
                 if opt in ('-s', '--save'):
                     for path in args:
-                        if not isPathAvailable(path):
-                            sys.exit()
                         SAVE_PATHS.add(path)
                 if opt in ('-l', '--load'):
                     loadPath = value
 
+            gen = 0
+
+            if loadPath is not None:
+                p = re.compile("Generation[0-9]+")
+                result = p.search(loadPath)
+                if result:
+                    gen = int(result.group(0).replace("Generation",""))
+
+            for savePath in SAVE_PATHS:
+                if not isPathAvailable(savePath, gen):
+                    sys.exit()
         except getopt.GetoptError as err:
             print(err)
             print(f"Usage: {sys.argv[0]} [-l <load path>] [ -s <save path 1> ... <save path N>]")
