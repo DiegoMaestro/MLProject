@@ -7,9 +7,9 @@ import tkinter
 
 class Game(object):
     def __init__(self, neuralNetwork1, neuralNetwork2):
-        self.board = board = Board([Element.BLACK_MAN] * 12 + [Element.EMPTY] * 8 + [Element.WHITE_MAN] * 12)
-        self.blackPlayer = Player(board, Flags.BLACK, depth=ALPHA_BETA_DEPTH, neuralNetwork=neuralNetwork1)
-        self.whitePlayer = Player(board, Flags.WHITE, depth=ALPHA_BETA_DEPTH, neuralNetwork=neuralNetwork2)
+        self.board = Board([Element.BLACK_MAN] * 12 + [Element.EMPTY] * 8 + [Element.WHITE_MAN] * 12)
+        self.blackPlayer = Player(self.board, Flags.BLACK, depth=ALPHA_BETA_DEPTH, neuralNetwork=neuralNetwork1)
+        self.whitePlayer = Player(self.board, Flags.WHITE, depth=ALPHA_BETA_DEPTH, neuralNetwork=neuralNetwork2)
 
         self.turnsWithoutCapture = 0
 
@@ -20,7 +20,7 @@ class Game(object):
             self.turnsWithoutCapture += 1
             move = currentPlayer.decideMove()
 
-            while (self.board.move(move, currentPlayer.player)):
+            while (self.board.move(move, currentPlayer.player) and bool(self.board.getAllLegalMoves(currentPlayer.player)[0])):
                 self.turnsWithoutCapture = 0
                 move = currentPlayer.decideMove(capturing=move[1])
 
@@ -38,7 +38,7 @@ class Game(object):
             move = currentPlayer.decideMove()
             print("------------ {} turn -----------------".format(Flags(currentPlayer.player).name))
             print("{}: {} ----- {}".format(Flags(currentPlayer.player).name, move, self.board.getAllLegalMoves(currentPlayer.player)))
-            while (self.board.move(move, currentPlayer.player)):
+            while (self.board.move(move, currentPlayer.player) and bool(self.board.getAllLegalMoves(currentPlayer.player)[0])):
                 self.turnsWithoutCapture = 0
                 self.board.printBoard()
                 move = currentPlayer.decideMove(capturing=move[1])
