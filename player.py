@@ -49,8 +49,13 @@ class Player(object):
         # depth is 0 or the current player captured a piece and can capture no more or the current player has no available move
         # The board is always evaluated from the player perspective: the player will try to get the highest score (maximizing)
         # and the opponent will try to get the lowest score (minimizing), which is the highest from his point of view
-        if (depth == 0 or (capturing is not None and not allCaptures) or (capturing is None and not allMoves)):
-            return self.neuralNetwork.feedForward(boardState.boardAsValue(self.player)), ()
+        if (depth == 0):
+            return self.neuralNetwork.feedForward(boardState.boardAsValue(Flags(self.player ^ Flags.DIFFERENT))), ()
+        elif (capturing is not None and not allCaptures) or (capturing is None and not allMoves):
+            if (maximizingPlayer):
+                return self.minmax(boardState, d - 1, alpha, beta, False)
+            else:
+                return self.minmax(boardState, d - 1, alpha, beta, True)
 
         if (maximizingPlayer):
             value = -inf
@@ -101,8 +106,13 @@ class Player(object):
         # depth is 0 or the current player captured a piece and can capture no more or the current player has no available move
         # The board is always evaluated from the player perspective: the player will try to get the highest score (maximizing)
         # and the opponent will try to get the lowest score (minimizing), which is the highest from his point of view
-        if (depth == 0 or (capturing is not None and not allCaptures) or (capturing is None and not allMoves)):
-            return self.neuralNetwork.feedForward(boardState.boardAsValue(self.player)), ()
+        if (depth == 0):
+            return self.neuralNetwork.feedForward(boardState.boardAsValue(Flags(self.player ^ Flags.DIFFERENT))), ()
+        elif (capturing is not None and not allCaptures) or (capturing is None and not allMoves):
+            if (maximizingPlayer):
+                return self.alphabeta(boardState, d - 1, alpha, beta, False)
+            else:
+                return self.alphabeta(boardState, d - 1, alpha, beta, True)
         if (maximizingPlayer):
             value = -inf
             bestMove = ()
