@@ -53,9 +53,9 @@ class Player(object):
             return self.neuralNetwork.feedForward(boardState.boardAsValue(Flags(self.player ^ Flags.DIFFERENT))), ()
         elif (capturing is not None and not allCaptures) or (capturing is None and not allMoves):
             if (maximizingPlayer):
-                return self.minmax(boardState, d - 1, alpha, beta, False)
+                return self.minmax(boardState, d, alpha, beta, False)
             else:
-                return self.minmax(boardState, d - 1, alpha, beta, True)
+                return self.minmax(boardState, d, alpha, beta, True)
 
         if (maximizingPlayer):
             value = -inf
@@ -110,9 +110,9 @@ class Player(object):
             return self.neuralNetwork.feedForward(boardState.boardAsValue(Flags(self.player ^ Flags.DIFFERENT))), ()
         elif (capturing is not None and not allCaptures) or (capturing is None and not allMoves):
             if (maximizingPlayer):
-                return self.alphabeta(boardState, d - 1, alpha, beta, False)
+                return self.alphabeta(boardState, d, alpha, beta, False)
             else:
-                return self.alphabeta(boardState, d - 1, alpha, beta, True)
+                return self.alphabeta(boardState, d, alpha, beta, True)
         if (maximizingPlayer):
             value = -inf
             bestMove = ()
